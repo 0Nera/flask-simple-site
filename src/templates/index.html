@@ -1,0 +1,18 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Flask testing</title>
+{% include 'include/head.html' %}
+		<meta name="description" content="Flask testing site">
+	</head>
+	<body>
+		<h1>Flask testing</h1>
+		<p>Hello World! <br>Your IP is {{ ip }} and you are using {{ browser }}</p><hr>
+		<ul>
+			{% for url, endpoint in links %}
+			<li><a href="{{ url }}">{{ endpoint }}</a></li>
+			{% endfor %}
+		</ul>
+{% include 'include/footer.html' %}
+	</body>
+</html>
