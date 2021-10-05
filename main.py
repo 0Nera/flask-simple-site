@@ -5,7 +5,7 @@ from flask_limiter.util import get_remote_address
 from flask_sqlalchemy import SQLAlchemy
 from PIL import Image, ImageDraw
 from datetime import datetime
-from user import User
+
 
 
 app = Flask(
@@ -37,11 +37,6 @@ def has_no_empty_params(rule):
 	defaults = rule.defaults if rule.defaults is not None else ()
 	arguments = rule.arguments if rule.arguments is not None else ()
 	return len(defaults) >= len(arguments)
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.query(User).get(user_id)
 
 
 @app.route('/login/', methods=['post', 'get'])
