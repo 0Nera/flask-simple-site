@@ -1,4 +1,12 @@
 from flask import Flask, url_for, render_template, request, make_response, redirect, session
+from flask_login import LoginManager, UserMixin, login_required, login_user, current_user
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_sqlalchemy import SQLAlchemy
+from PIL import Image, ImageDraw
+from datetime import datetime
+from user import User
+
 
 app = Flask(
 	__name__, 
@@ -6,8 +14,23 @@ app = Flask(
 	static_folder = "static"
 )
 
+
+
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+    default_limits=["60 per minute"]
+)
+
+
+app.config['SECRET_KEY'] = 'a really really really really long secret key'
+db = SQLAlchemy(app)
+img_counter = 0
+login_manager = LoginManager(app)
+login_manager.init_app(app)
 app.secret_key = "super secret key"
 app.debug = True
+
 
 
 def has_no_empty_params(rule):
@@ -16,6 +39,37 @@ def has_no_empty_params(rule):
 	return len(defaults) >= len(arguments)
 
 
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.query(User).get(user_id)
+
+
+@app.route('/login/', methods=['post', 'get'])
+def login():
+    return render_template('login.html')
+
+
+@limiter.limit("12/minute")
+@login_manager.user_loader
+@app.route('/gen-img')
+def gen_img():
+	now = datetime.now()
+	global img_counter
+	img_counter += 1
+	text = "Hello, World!\nGenerated: " + str(img_counter) + "\nServer time: " + str(now) + "\nThis site created on Flask framework\n\n©2021 Aren Elchinyan\nSource code: https://github.com/0Nera"
+	color = (0, 0, 120)
+	img = Image.new('RGB', (256, 128), color)
+	imgDrawer = ImageDraw.Draw(img)
+	imgDrawer.text((10, 10), text)
+	img.save("static/img/temp.png")
+	return make_response(
+		render_template("gen-img.html"), 
+		200
+		) 
+
+
+@limiter.limit("1/second")
+@login_manager.user_loader
 @app.route('/')
 def index():
 	links = []
@@ -33,6 +87,13 @@ def index():
 		)
 
 
+@app.route('/admin')
+@login_required
+def admin():
+    return '200'
+
+
+@login_manager.user_loader
 @app.route('/session-test')
 def session_test():
 	if 'visits' in session:
@@ -46,6 +107,8 @@ def session_test():
 		200
 		)
 
+
+@login_manager.user_loader
 @app.route('/session-pop')
 def session_pop():
 	session.pop('visits', None)
@@ -54,6 +117,8 @@ def session_pop():
 		code=200
 		)
 
+
+@login_manager.user_loader
 @app.route('/about')
 def about():
 	return make_response(
@@ -63,6 +128,7 @@ def about():
 		)
 
 
+@login_manager.user_loader
 @app.route("/redirect/<url>")
 def redirect_to(url):
 	return make_response(
