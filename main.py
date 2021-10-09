@@ -1,5 +1,4 @@
 from flask import Flask, url_for, render_template, request, make_response, redirect, session
-from flask_login import LoginManager, UserMixin, login_required, login_user, current_user
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from PIL import Image, ImageDraw
@@ -24,8 +23,6 @@ limiter = Limiter(
 
 app.config['SECRET_KEY'] = 'a really really really really long secret key'
 img_counter = 0
-login_manager = LoginManager(app)
-login_manager.init_app(app)
 app.secret_key = "super secret key"
 app.debug = True
 
@@ -43,7 +40,6 @@ def login():
 
 
 @limiter.limit("10/minute")
-@login_manager.user_loader
 @app.route('/gen-img')
 def gen_img():
 	now = datetime.now()
@@ -61,7 +57,6 @@ def gen_img():
 		) 
 
 
-@login_manager.user_loader
 @app.route('/')
 def index():
 	links = []
@@ -80,16 +75,14 @@ def index():
 
 
 @app.route('/admin')
-@login_required
 def admin():
     return '200'
 
 
-@login_manager.user_loader
 @app.route('/session-test')
 def session_test():
 	if 'visits' in session:
-    		session['visits'] = session.get('visits') + 1  # чтение и обновление данных сессии
+		session['visits'] = session.get('visits') + 1  # чтение и обновление данных сессии
 	else:
 		session['visits'] = 1  # настройка данных сессии
 	return make_response(
@@ -100,7 +93,6 @@ def session_test():
 		)
 
 
-@login_manager.user_loader
 @app.route('/session-pop')
 def session_pop():
 	session.pop('visits', None)
@@ -110,7 +102,6 @@ def session_pop():
 		)
 
 
-@login_manager.user_loader
 @app.route('/about')
 def about():
 	return make_response(
@@ -120,7 +111,6 @@ def about():
 		)
 
 
-@login_manager.user_loader
 @app.route("/redirect/<url>")
 def redirect_to(url):
 	return make_response(
